@@ -25,16 +25,32 @@ class MinimalPlugin:
         layerName = "Кадастр"
         bufferDist = 500
         layer = QgsProject.instance().mapLayersByName(layerName)[0]
+
+        buffered_feat_list = []
+
         if not layer.isValid():
             QMessageBox.information(None, 'AvailabilityCalculator', f'Layer loading failed')
         else:
-            print("Valid layer")
             QgsProject.instance().addMapLayer(layer)
 
-        bufferLayer = processing.run("qgis:buffer", {'INPUT': layer, 'DISTANCE': bufferDist, 'OUTPUT': 'TEMPORARY_OUTPUT'})['OUTPUT']
-        QgsProject.instance().addMapLayer(bufferLayer)
+        for id, feat in enumerate(layer.getFeatures()):
+            geometry = feat.geometry()
+            buffer = geometry.buffer(bufferDist, 16)
+            feat = QgsFeature(id)
+            feat.setGeometry(buffer)
+            buffered_feat_list.append(feat)
+            # intersect = buffer.intersection(geometry)
+            # mp = intersect.length()
+            # print(mp)
+        layer_crs = layer.sourceCrs().toWkt()
+        buff_layer = QgsVectorLayer('Polygon?crs='+layer_crs, "Buffered "+ layer.sourceName(), "memory")
+        buff_layer.dataProvider().addFeatures(buffered_feat_list)
+        
+        if buff_layer.isValid():
+            QgsProject.instance().addMapLayer(buff_layer)
+        else:
+            print("faulty layer")
 
-        processing.run('qgis:extractbylocation',  {'INPUT': layer, 'PREDICATE': [0], 'INTERSECT': bufferLayer, 'OUTPUT': 'TEMPORARY_OUTPUT'})
 
 
 
