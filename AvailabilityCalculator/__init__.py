@@ -1,12 +1,15 @@
 import os.path
 from PyQt5.QtWidgets import QAction, QMessageBox
-from qgis.core import QgsVectorLayer, QgsVectorFileWriter, QgsProject, QgsWkbTypes
+from qgis.core import QgsVectorLayer, QgsVectorFileWriter, QgsProject, QgsWkbTypes, QgsFeature
 from qgis.utils import iface
 import processing
 
 def classFactory(iface):
     return MinimalPlugin(iface)
 
+#layer_provider=layer.dataProvider()
+#layer_provider.addAttributes([QgsField(fieldName,QVariant.Int)])
+#layer.updateFields()
 
 class MinimalPlugin:
     def __init__(self, iface):
@@ -32,27 +35,23 @@ class MinimalPlugin:
             QMessageBox.information(None, 'AvailabilityCalculator', f'Layer loading failed')
         else:
             QgsProject.instance().addMapLayer(layer)
+        print(layer)
 
         for id, feat in enumerate(layer.getFeatures()):
             geometry = feat.geometry()
             buffer = geometry.buffer(bufferDist, 16)
             feat = QgsFeature(id)
             feat.setGeometry(buffer)
-            buffered_feat_list.append(feat)
-            # intersect = buffer.intersection(geometry)
-            # mp = intersect.length()
-            # print(mp)
-        layer_crs = layer.sourceCrs().toWkt()
-        buff_layer = QgsVectorLayer('Polygon?crs='+layer_crs, "Buffered "+ layer.sourceName(), "memory")
-        buff_layer.dataProvider().addFeatures(buffered_feat_list)
-        
-        if buff_layer.isValid():
-            QgsProject.instance().addMapLayer(buff_layer)
-        else:
-            print("faulty layer")
+            # buffered_feat_list.append(feat)
 
-
-
-
-
-
+            layer_crs = layer.sourceCrs().toWkt()
+            buff_layer = QgsVectorLayer('Polygon?crs='+layer_crs, "Buffered "+ layer.sourceName(), "memory")
+            buff_layer.dataProvider().addFeatures([feat])
+            res = processing.run("qgis:extractbylocation", 
+                {'INPUT': layer, 'PREDICATE': 0, 'INTERSECT': buff_layer, 'OUTPUT': 'TEMPORARY_OUTPUT'}
+            )['OUTPUT']
+            print(res.featureCount())
+            #QgsProject.instance().addMapLayer(res)
+            if id >= 5:
+                break
+            
