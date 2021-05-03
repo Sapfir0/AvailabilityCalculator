@@ -1,12 +1,18 @@
 import mapboxgl from 'mapbox-gl';
+import { observer } from 'mobx-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { accessToken, geojsonFormat, isoLayer } from '../config';
+import { TYPES } from '../inversify/types';
 import { getIso } from '../services/ApiInteractionService';
+import { useInject } from '../services/hooks';
 import { IsochroneSettings } from './IsochroneSettings';
+import { MapStore } from './MapStore';
 
 mapboxgl.accessToken = accessToken;
 
-const Map = () => {
+const Map = observer(() => {
+    const mapStore = useInject<MapStore>(TYPES.MapStore);
+
     const mapContainerRef = useRef(null);
 
     const [lng, setLng] = useState(44.5);
@@ -31,22 +37,25 @@ const Map = () => {
         });
 
         map.on('click', async function (e) {
-            setLat(e.lngLat.lat)
-            setLng(e.lngLat.lng)
-            marker.setLngLat(e.lngLat).addTo(map);            
-            const features = await getIso(e.lngLat.lat, e.lngLat.lng);
-            (map.getSource('iso') as any).setData(features)
+            setLat(e.lngLat.lat);
+            setLng(e.lngLat.lng);
+            marker.setLngLat(e.lngLat).addTo(map);
+            const features = await getIso(e.lngLat.lat, e.lngLat.lng, mapStore.travelMode, mapStore.maxDuration);
+            (map.getSource('iso') as any).setData(features);
+
+            const geoJson = map.querySourceFeatures('iso', { sourceLayer: 'isoLayer' });
+            console.log(geoJson);
         });
 
         return () => map.remove();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div>
             <div className="map-container" ref={mapContainerRef} />
-            {/* <IsochroneSettings /> */}
+            <IsochroneSettings />
         </div>
     );
-};
+});
 
 export default Map;
