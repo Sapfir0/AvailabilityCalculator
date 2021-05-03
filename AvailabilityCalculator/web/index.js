@@ -1,9 +1,7 @@
 
 const urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/';
-const defaultLon = 44.5
-const defaultLat = 48.7
-let lon = defaultLon;
-let lat = defaultLat;
+let lon = 44.5;
+let lat = 48.7;
 let profile = 'walking';
 let minutes = 10;
 
@@ -12,14 +10,13 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoic2FwZmlyMCIsImEiOiJja284ZGk3aTkwNnZoMnBxbXM4e
 const map = new mapboxgl.Map({
     container: 'map', // container id
     style: 'mapbox://styles/mapbox/streets-v11', // stylesheet
-    center: [defaultLon, defaultLat], // starting position [lng, lat]
+    center: [lon, lat], // starting position [lng, lat]
     zoom: 11.5 // starting zoom
 });
 
 map.on('click', async function (e) {
-    l = e.lngLat
-    lon = l.lng
-    lat = l.lat
+    lon = e.lngLat.lng
+    lat = e.lngLat.lat
     marker.setLngLat(e.lngLat).addTo(map);
     await getIso();
 });
@@ -33,12 +30,6 @@ const marker = new mapboxgl.Marker({
     'color': '#314ccd'
 });
 
-// Create a LngLat object to use in the marker initialization
-// https://docs.mapbox.com/mapbox-gl-js/api/#lnglat
-const lngLat = {
-    lon: lon,
-    lat: lat
-};
 
 async function getIso() {
     const query = `${urlBase}${profile}/${lon},${lat}?contours_minutes=${minutes}&polygons=true&access_token=${mapboxgl.accessToken}`;
@@ -83,7 +74,7 @@ map.on('load', async function () {
     );
 
     // Initialize the marker at the query coordinates
-    marker.setLngLat(lngLat).addTo(map);
+    marker.setLngLat({ lon, lat }).addTo(map);
 
     // Make the API call
     await getIso();
