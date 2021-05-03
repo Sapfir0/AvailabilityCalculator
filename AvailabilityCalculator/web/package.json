@@ -1,6 +1,7 @@
 {
   "name": "webqgis",
   "version": "0.1.0",
+  "homepage": "http://Sapfir0.github.io/QGisModule",
   "private": true,
   "dependencies": {
     "@turf/buffer": "^6.3.0",
