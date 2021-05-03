@@ -11,6 +11,9 @@ import { IsochroneSettings } from './IsochroneSettings';
 import { MapStore } from './MapStore';
 
 mapboxgl.accessToken = accessToken;
+// @ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax 
+mapboxgl.workerClass = require('worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker').default;
 
 const Map = observer(() => {
     const mapStore = useInject<MapStore>(TYPES.MapStore);
