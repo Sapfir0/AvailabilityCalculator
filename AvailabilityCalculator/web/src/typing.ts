@@ -3,3 +3,8 @@ export enum TravelMode {
     cycling,
     driving
 }
+
+export enum Bufferization {
+    isochrones,
+    byAir,
+}

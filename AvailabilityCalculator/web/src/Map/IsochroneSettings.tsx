@@ -1,12 +1,12 @@
 import { observer } from 'mobx-react';
 import { TYPES } from '../inversify/types';
 import { useInject } from '../services/hooks';
-import { TravelMode } from '../typing';
+import { Bufferization, TravelMode } from '../typing';
 import { MapStore } from './MapStore';
 import { Radio } from './Radio';
 
 export const IsochroneSettings = observer(() => {
-    const { setMaxDuration, setTravelMode, maxDuration, travelMode } = useInject<MapStore>(TYPES.MapStore);
+    const { setMaxDuration, setTravelMode, maxDuration, travelMode, bufferization, setBufferizationMode } = useInject<MapStore>(TYPES.MapStore);
 
     return (
         <div className="absolute fl my24 mx24 py24 px24 bg-gray-faint round">
@@ -22,6 +22,11 @@ export const IsochroneSettings = observer(() => {
                     <Radio value={maxDuration} defaultValue={'10'} onChange={setMaxDuration} />
                     <Radio value={maxDuration} defaultValue={'20'} onChange={setMaxDuration} />
                     <Radio value={maxDuration} defaultValue={'30'} onChange={setMaxDuration} />
+                </div>
+                <h4 className="txt-m txt-bold mb6">Choose a bufferization method:</h4>
+                <div className="mb12 mr12 toggle-group align-center">
+                    <Radio value={bufferization} defaultValue={Bufferization[Bufferization.byAir]} onChange={setBufferizationMode} />
+                    <Radio value={bufferization} defaultValue={Bufferization[Bufferization.isochrones]} onChange={setBufferizationMode} />
                 </div>
             </form>
         </div>

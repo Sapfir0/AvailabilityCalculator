@@ -1,3 +1,4 @@
+import { buffer, point } from '@turf/turf';
 import mapboxgl from 'mapbox-gl';
 import { observer } from 'mobx-react';
 import React, { useEffect, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import { accessToken, geojsonFormat, isoLayer } from '../config';
 import { TYPES } from '../inversify/types';
 import { getIso } from '../services/ApiInteractionService';
 import { useInject } from '../services/hooks';
+import { Bufferization } from '../typing';
 import { IsochroneSettings } from './IsochroneSettings';
 import { MapStore } from './MapStore';
 
@@ -18,6 +20,7 @@ const Map = observer(() => {
     const [lng, setLng] = useState(44.5);
     const [lat, setLat] = useState(48.7);
     const [zoom, setZoom] = useState(11.5);
+    const bufferDistance = 500;
 
     useEffect(() => {
         const map = new mapboxgl.Map({
@@ -40,11 +43,30 @@ const Map = observer(() => {
             setLat(e.lngLat.lat);
             setLng(e.lngLat.lng);
             marker.setLngLat(e.lngLat).addTo(map);
-            const features = await getIso(e.lngLat.lat, e.lngLat.lng, mapStore.travelMode, mapStore.maxDuration);
-            (map.getSource('iso') as any).setData(features);
+            const source = map.getSource('iso') as mapboxgl.GeoJSONSource;
 
-            const geoJson = map.querySourceFeatures('iso', { sourceLayer: 'isoLayer' });
-            console.log(geoJson);
+            const areaBuilder = {
+                [Bufferization[Bufferization.isochrones]]: async () => {
+                    const features = await getIso(
+                        e.lngLat.lat,
+                        e.lngLat.lng,
+                        mapStore.travelMode,
+                        mapStore.maxDuration,
+                    );
+                    source.setData(features);
+                },
+                [Bufferization[Bufferization.byAir]]: async () => {
+                    const bufferLayer = buffer(point([e.lngLat.lng, e.lngLat.lat]), bufferDistance, {
+                        units: 'meters',
+                    });
+                    source.setData(bufferLayer);
+                },
+            };
+
+            await areaBuilder[mapStore.bufferization]();
+
+            // const geoJson = map.querySourceFeatures('iso', { sourceLayer: 'isoLayer' });
+            // console.log(geoJson);
         });
 
         return () => map.remove();
