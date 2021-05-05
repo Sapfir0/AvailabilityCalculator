@@ -1,4 +1,4 @@
-Avaibality Calculator
+Availability Calculator
 
 ## Demo
 
