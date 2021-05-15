@@ -1,0 +1,9 @@
+[general]
+name=AvailabilityCalculator
+description=Availability calculator
+about=Compute availability
+version=0.1
+qgisMinimumVersion=3.0
+author=Alexander Yurev
+email=alexander.yurev@internet.ru
+repository=https://github.com/Sapfir0/QGisModule
