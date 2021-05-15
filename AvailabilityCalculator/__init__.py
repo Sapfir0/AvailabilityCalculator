@@ -5,18 +5,23 @@ from qgis.utils import iface
 import processing
 from PyQt5 import uic
 from PyQt5 import QtWidgets
+from enum import Enum
+
+
+class STRATEGY(Enum):
+    ShortestPath = 0
+    FastestPath = 1
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'main.ui'))
+    os.path.dirname(__file__), 'form.ui'))
 
 def classFactory(iface):
     return MinimalPlugin(iface)
 
 
-class MinimalPlugin(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
-        super(MinimalPlugin, self).__init__(parent)
-        self.setupUi(self)
+class MinimalPlugin:
+    def __init__(self, iface):
+        self.iface = iface
 
     def initGui(self):
         self.action = QAction('Go!', self.iface.mainWindow())
@@ -56,13 +61,15 @@ class MinimalPlugin(QtWidgets.QDialog, FORM_CLASS):
             buffer = geometry.buffer(bufferDist, 16)
             feat = QgsFeature(id)
             feat.setGeometry(buffer)
+            centroid = geometry.centroid().asPoint()
+            lat, lon = centroid.x(), centroid.y()
 
             layer_crs = layer.sourceCrs().toWkt()
-            buff_layer = QgsVectorLayer('Polygon?crs='+layer_crs, "Buffered "+ layer.sourceName(), "memory")
-            buff_layer.dataProvider().addFeatures([feat])
+            buffLayer = QgsVectorLayer('Polygon?crs='+layer_crs, "Buffered "+ layer.sourceName(), "memory")
+            buffLayer.dataProvider().addFeatures([feat])
             try:
                 res = processing.run("qgis:extractbylocation", 
-                    {'INPUT': layer, 'PREDICATE': 0, 'INTERSECT': buff_layer, 'OUTPUT': 'TEMPORARY_OUTPUT'}
+                    {'INPUT': layer, 'PREDICATE': 0, 'INTERSECT': buffLayer, 'OUTPUT': 'TEMPORARY_OUTPUT'}
                 )['OUTPUT']
 
                 featuresCount = res.featureCount()
@@ -77,19 +84,23 @@ class MinimalPlugin(QtWidgets.QDialog, FORM_CLASS):
             except:
                 print(f"Error while processing on {id}")
 
-
             isochrone = processing.run("qneat3:isoareaaspointcloudfrompoint", {
                 'INPUT': roadLayer,
                 'START_POINT': f'{lat},{lon} []',
-                'MAX_DIST':600,
-                'STRATEGY':1,'ENTRY_COST_CALCULATION_METHOD':0,
+                'MAX_DIST': bufferDist,
+                'STRATEGY': STRATEGY.ShortestPath.value,  
+                'ENTRY_COST_CALCULATION_METHOD': 0,
                 'DIRECTION_FIELD':None,'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'',
                 'DEFAULT_DIRECTION':2,'SPEED_FIELD':None,'DEFAULT_SPEED':5,'TOLERANCE':0,
                 'OUTPUT':'TEMPORARY_OUTPUT'
             }
             )['OUTPUT']
-            featuresCount = isochrone.featureCount()
-            print(featuresCount)
-            if id > 1:
-                break
+
+            for isoId, isoFeat in enumerate(isochrone.getFeatures()):
+                print(isoFeat.geometry().area())
+            # featuresCount = isochrone.featureCount()
+            # print(featuresCount)
+            print(isochrone)
+
+            break
             
