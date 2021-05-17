@@ -2,9 +2,9 @@ import os.path
 from PyQt5.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsVectorLayer, QgsVectorFileWriter, QgsProject, QgsWkbTypes, QgsFeature
 from qgis.utils import iface
-import processing
 from PyQt5 import uic
 from PyQt5 import QtWidgets
+import processing
 from enum import Enum
 
 
@@ -33,16 +33,26 @@ class MinimalPlugin:
         del self.action
 
     def run(self):
+        def setAttribute(layer, attributeName, attributeValue):
+            layer.startEditing()
+            fieldIdx = layerDataProvider.fields().indexFromName(attributeName)
+            layerDataProvider.changeAttributeValues({int(feat.id()): {fieldIdx: attributeValue} })
+            layer.commitChanges()
+
+
         notFound = -1
         layerName = "Кадастр"
-        roadLayerName = "HighwayTula AllHighwaysTags"
+        roadLayerName = "iso highway"
         bufferDist = 500
         layer = QgsProject.instance().mapLayersByName(layerName)[0]
-        fieldName = "NeighborsCount"
         fieldNameLength = 10
+        bufferAttributeName = "NeighborsCount"[0:fieldNameLength]
+        isochroneFeaturesAvgAreaAttributeName = "AvgAreaIsochrone"[0:fieldNameLength]
+        isochroneFeaturesCountAttributeName = "CountIsochrone"[0:fieldNameLength]
+
         roadLayer = QgsProject.instance().mapLayersByName(roadLayerName)[0]
 
-        realFieldName = fieldName[0:fieldNameLength]
+        bufferAttributeName = bufferAttributeName[0:fieldNameLength]
 
         if not layer.isValid():
             QMessageBox.information(None, 'AvailabilityCalculator', f'Layer loading failed')
@@ -51,9 +61,10 @@ class MinimalPlugin:
 
 
         layerDataProvider=layer.dataProvider()
-        if (layer.fields().indexFromName(realFieldName) == notFound):
-            layerDataProvider.addAttributes([QgsField(fieldName,QVariant.Int)])
-            layer.updateFields()
+        for field in [bufferAttributeName, isochroneFeaturesAvgAreaAttributeName, isochroneFeaturesCountAttributeName]:
+            if (layer.fields().indexFromName(field) == notFound):
+                layerDataProvider.addAttributes([QgsField(field,QVariant.Int)])
+                layer.updateFields()
 
 
         for id, feat in enumerate(layer.getFeatures()):
@@ -73,34 +84,31 @@ class MinimalPlugin:
                 )['OUTPUT']
 
                 featuresCount = res.featureCount()
-                layer.startEditing()
-
-                fieldIdx = layerDataProvider.fields().indexFromName(realFieldName)
-                attrValues = {fieldIdx: featuresCount}
-
-                layerDataProvider.changeAttributeValues({int(feat.id()): attrValues })
-                layer.commitChanges()
+                setAttribute(layer, bufferAttributeName, featuresCount)
                 #QgsProject.instance().addMapLayer(res)
             except:
                 print(f"Error while processing on {id}")
 
-            isochrone = processing.run("qneat3:isoareaaspointcloudfrompoint", {
+            isochrone = processing.run("qneat3:isoareaaspolygonsfrompoint", {
                 'INPUT': roadLayer,
                 'START_POINT': f'{lat},{lon} []',
                 'MAX_DIST': bufferDist,
-                'STRATEGY': STRATEGY.ShortestPath.value,  
-                'ENTRY_COST_CALCULATION_METHOD': 0,
-                'DIRECTION_FIELD':None,'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'',
-                'DEFAULT_DIRECTION':2,'SPEED_FIELD':None,'DEFAULT_SPEED':5,'TOLERANCE':0,
-                'OUTPUT':'TEMPORARY_OUTPUT'
-            }
-            )['OUTPUT']
+                'INTERVAL': bufferDist / 5,
+                'CELL_SIZE': 5,
+                'STRATEGY': STRATEGY.ShortestPath.value,
+                'ENTRY_COST_CALCULATION_METHOD':0,'DIRECTION_FIELD':None,
+                'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'','DEFAULT_DIRECTION':2,'SPEED_FIELD':None,
+                'DEFAULT_SPEED':5,'TOLERANCE':0,'OUTPUT_INTERPOLATION':'TEMPORARY_OUTPUT','OUTPUT_POLYGONS':'TEMPORARY_OUTPUT'}
+            )['OUTPUT_POLYGONS']
+                
+            mapInIsochrone = processing.run("native:extractbylocation", {'INPUT':layer,'PREDICATE':[0],'INTERSECT':isochrone,'OUTPUT':'TEMPORARY_OUTPUT'})['OUTPUT']
+            areas = [isofeat.geometry().area() for isofeat in mapInIsochrone.getFeatures()]
 
-            for isoId, isoFeat in enumerate(isochrone.getFeatures()):
-                print(isoFeat.geometry().area())
-            # featuresCount = isochrone.featureCount()
-            # print(featuresCount)
-            print(isochrone)
+            countOfFeaturesInIsochrone = len(areas)
+            avgAreaOfFeaturesInIsochrone = sum(areas) / len(areas)
+
+            setAttribute(layer, isochroneFeaturesCountAttributeName, countOfFeaturesInIsochrone)
+            setAttribute(layer, isochroneFeaturesAvgAreaAttributeName, avgAreaOfFeaturesInIsochrone)
 
             break
-            
+  
