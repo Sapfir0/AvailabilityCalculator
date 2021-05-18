@@ -5,17 +5,17 @@
     "main.js.map": "/QGisModule/static/js/main.22f73b4c.chunk.js.map",
     "runtime-main.js": "/QGisModule/static/js/runtime-main.b405019b.js",
     "runtime-main.js.map": "/QGisModule/static/js/runtime-main.b405019b.js.map",
-    "static/js/2.f1e031d5.chunk.js": "/QGisModule/static/js/2.f1e031d5.chunk.js",
-    "static/js/2.f1e031d5.chunk.js.map": "/QGisModule/static/js/2.f1e031d5.chunk.js.map",
+    "static/js/2.7c9dea43.chunk.js": "/QGisModule/static/js/2.7c9dea43.chunk.js",
+    "static/js/2.7c9dea43.chunk.js.map": "/QGisModule/static/js/2.7c9dea43.chunk.js.map",
     "index.html": "/QGisModule/index.html",
     "static/css/main.b81ef3ff.chunk.css.map": "/QGisModule/static/css/main.b81ef3ff.chunk.css.map",
-    "static/js/2.f1e031d5.chunk.js.LICENSE.txt": "/QGisModule/static/js/2.f1e031d5.chunk.js.LICENSE.txt",
+    "static/js/2.7c9dea43.chunk.js.LICENSE.txt": "/QGisModule/static/js/2.7c9dea43.chunk.js.LICENSE.txt",
     "static/js/mapbox-gl-csp-worker.7e6766ff.worker.js": "/QGisModule/static/js/mapbox-gl-csp-worker.7e6766ff.worker.js",
     "static/js/mapbox-gl-csp-worker.7e6766ff.worker.js.map": "/QGisModule/static/js/mapbox-gl-csp-worker.7e6766ff.worker.js.map"
   },
   "entrypoints": [
     "static/js/runtime-main.b405019b.js",
-    "static/js/2.f1e031d5.chunk.js",
+    "static/js/2.7c9dea43.chunk.js",
     "static/css/main.b81ef3ff.chunk.css",
     "static/js/main.22f73b4c.chunk.js"
   ]
