@@ -18,7 +18,6 @@ class STRATEGY(Enum):
 def classFactory(iface):
     return MinimalPlugin(iface)
 
-
 class MinimalPlugin:
     def __init__(self, iface):
         self.iface = iface
@@ -37,40 +36,8 @@ class MinimalPlugin:
         fieldIdx = layer.dataProvider().fields().indexFromName(attributeName)
         layer.dataProvider().changeAttributeValues({int(feat.id()): {fieldIdx: attributeValue} })
         layer.commitChanges()
-
-    def run(self):
-        self.dialog = CalculatorDialog()
-        self.dialog.show()
-        self.dialog.adjustSize()
-        result = self.dialog.exec_()
-        if result == QFileDialog.Rejected:
-            return
-
-        notFound = -1
-        bufferDist = 500
-        layer = QgsProject.instance().mapLayersByName(self.dialog.featuresLayer.currentText())[0]
-        fieldNameLength = 10
-        bufferAttributeName = "NeighborsCount"[0:fieldNameLength]
-        isochroneFeaturesAvgAreaAttributeName = "AvgAreaIsochrone"[0:fieldNameLength]
-        isochroneFeaturesCountAttributeName = "CountIsochrone"[0:fieldNameLength]
-
-        roadLayer = QgsProject.instance().mapLayersByName(self.dialog.roadLayer.currentText())[0]
-
-        bufferAttributeName = bufferAttributeName[0:fieldNameLength]
-
-        if not layer.isValid():
-            QMessageBox.information(None, 'AvailabilityCalculator', f'Layer loading failed')
-        else:
-            QgsProject.instance().addMapLayer(layer)
-
-
-        layerDataProvider=layer.dataProvider()
-        for field in [bufferAttributeName, isochroneFeaturesAvgAreaAttributeName, isochroneFeaturesCountAttributeName]:
-            if (layer.fields().indexFromName(field) == notFound):
-                layerDataProvider.addAttributes([QgsField(field,QVariant.Int)])
-                layer.updateFields()
-
-
+    
+    def bufferProcessing(self, layer, bufferDist, bufferAttributeName):
         for id, feat in enumerate(layer.getFeatures()):
             geometry = feat.geometry()
             buffer = geometry.buffer(bufferDist, 16)
@@ -91,9 +58,9 @@ class MinimalPlugin:
                 #QgsProject.instance().addMapLayer(res)
             except:
                 print(f"Error while processing on {id}")
-            break
 
 
+    def isochroneProcessing(self, layer, roadLayer, bufferDist, isochroneFeaturesCountAttributeName, isochroneFeaturesAvgAreaAttributeName):
         # мы должны ходить по фичам, относящимся к дороге   
         for id, feat in enumerate(roadLayer.getFeatures()):
             geometry = feat.geometry()
@@ -124,5 +91,45 @@ class MinimalPlugin:
             self.setAttribute(layer, isochroneFeaturesAvgAreaAttributeName, avgAreaOfFeaturesInIsochrone, feat)
             print("Attributes added")
 
-            break
-  
+
+    def run(self):
+        self.dialog = CalculatorDialog()
+        self.dialog.show()
+        self.dialog.adjustSize()
+        result = self.dialog.exec_()
+        if result == QFileDialog.Rejected:
+            return
+
+        notFound = -1
+
+        layer = QgsProject.instance().mapLayersByName(self.dialog.featuresLayer.currentText())[0]
+        roadLayer = QgsProject.instance().mapLayersByName(self.dialog.roadLayer.currentText())[0]
+
+        fieldNameLength = 10
+        bufferAttributeName = "NeighborsCount"[0:fieldNameLength]
+        isochroneFeaturesAvgAreaAttributeName = "AvgAreaIsochrone"[0:fieldNameLength]
+        isochroneFeaturesCountAttributeName = "CountIsochrone"[0:fieldNameLength]
+
+        bufferDist = int(self.dialog.bufferSize.value())
+
+        bufferAttributeName = bufferAttributeName[0:fieldNameLength]
+
+        if not layer.isValid():
+            QMessageBox.information(None, 'AvailabilityCalculator', f'Layer loading failed')
+        else:
+            QgsProject.instance().addMapLayer(layer)
+
+
+        layerDataProvider=layer.dataProvider()
+        for field in [bufferAttributeName, isochroneFeaturesAvgAreaAttributeName, isochroneFeaturesCountAttributeName]:
+            if (layer.fields().indexFromName(field) == notFound):
+                layerDataProvider.addAttributes([QgsField(field,QVariant.Int)])
+                layer.updateFields()
+
+
+        bufferMode = self.dialog.bufferizationMode.currentText().lower()
+        
+        if bufferMode == "isochrone":
+            self.isochroneProcessing(layer, roadLayer, bufferDist, isochroneFeaturesCountAttributeName, isochroneFeaturesAvgAreaAttributeName)
+        elif bufferMode == "buffer":
+            self.bufferProcessing(layer, bufferDist, bufferAttributeName)
