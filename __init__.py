@@ -1,6 +1,6 @@
 import os.path
 from PyQt5.QtWidgets import QAction, QMessageBox
-from qgis.core import QgsVectorLayer, QgsVectorFileWriter, QgsProject, QgsWkbTypes, QgsFeature
+from qgis.core import QgsVectorLayer, QgsField, QVariant, QgsVectorFileWriter, QgsProject, QgsWkbTypes, QgsFeature
 from qgis.utils import iface
 from PyQt5 import uic
 from PyQt5 import QtWidgets
