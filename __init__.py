@@ -63,6 +63,7 @@ class MinimalPlugin:
 
     def isochroneProcessing(self, layer, roadLayer, bufferDist, isochroneFeaturesCountAttributeName, isochroneFeaturesAvgAreaAttributeName):
         # мы должны ходить по фичам, относящимся к дороге   
+        isochrones = []
         for id, feat in enumerate(roadLayer.getFeatures()):
             geometry = feat.geometry()
             centroid = geometry.centroid().asPoint()
@@ -80,7 +81,7 @@ class MinimalPlugin:
                 'DEFAULT_SPEED':5,'TOLERANCE':0,'OUTPUT_INTERPOLATION':'TEMPORARY_OUTPUT','OUTPUT_POLYGONS':'TEMPORARY_OUTPUT'}
             )['OUTPUT_POLYGONS']
             print("Extracting")
-            QgsProject.instance().addMapLayer(isochrone)
+            isochrones.append(isochrone)
 
             mapInIsochrone = processing.run("native:extractbylocation", {'INPUT':layer,'PREDICATE':[0],'INTERSECT':isochrone,'OUTPUT':'TEMPORARY_OUTPUT'})['OUTPUT']
             areas = [isofeat.geometry().area() for isofeat in mapInIsochrone.getFeatures()]
@@ -90,8 +91,8 @@ class MinimalPlugin:
 
             self.setAttribute(layer, isochroneFeaturesCountAttributeName, countOfFeaturesInIsochrone, feat)
             self.setAttribute(layer, isochroneFeaturesAvgAreaAttributeName, avgAreaOfFeaturesInIsochrone, feat)
-            print("Attributes added")
-
+            
+        QgsProject.instance().addMapLayer(isochrones)
 
     def run(self):
         self.dialog = CalculatorDialog()
