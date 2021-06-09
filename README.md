@@ -1,5 +1,6 @@
-
 # Availability calculator
+
+## Author: Alexander Yurev
 
 QGIS plugin for computing availability, building an isochrone
 
