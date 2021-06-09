@@ -1,10 +1,13 @@
 
+# Availability calculator
 
-## Demo
+QGIS plugin for computing availability, building an isochrone
 
-https://sapfir0.github.io/QGisModule/
 
-## Build
+Requirements
 
-    yarn install
-    yarn start
+* QNeat3 (add from QGIS plugins store)
+* Features layer (with data about houses)
+* Road layer 
+* All layer need to be in EPSG 32637
+    

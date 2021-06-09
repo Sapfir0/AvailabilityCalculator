@@ -6,4 +6,4 @@ version=0.1
 qgisMinimumVersion=3.0
 author=Alexander Yurev
 email=alexander.yurev@internet.ru
-repository=https://github.com/Sapfir0/QGisModule
+repository=https://github.com/Sapfir0/AvailabilityCalculator
